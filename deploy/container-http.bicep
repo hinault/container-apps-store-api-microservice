@@ -12,18 +12,20 @@ param registryPassword string
 param minReplicas int = 0
 param secrets array = []
 param env array = []
+param revisionMode string = 'Single'
 
 
-resource environment 'Microsoft.App/managedEnvironments@2022-01-01-preview' existing = {
+resource environment 'Microsoft.App/managedEnvironments@2022-03-01' existing = {
   name: environmentName
 }
 
-resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
+resource containerApp 'Microsoft.App/containerApps@2022-03-01' = {
   name: containerAppName
   location: location
   properties: {
     managedEnvironmentId: environment.id
     configuration: {
+      activeRevisionsMode: revisionMode
       secrets: secrets
       registries: isPrivateRegistry ? [
         {
@@ -36,6 +38,12 @@ resource containerApp 'Microsoft.App/containerApps@2022-01-01-preview' = {
         external: isExternalIngress
         targetPort: containerPort
         transport: 'auto'
+        traffic: [
+          {
+            latestRevision: true
+            weight: 100
+          }
+        ]
       } : null
       dapr: {
         enabled: true
